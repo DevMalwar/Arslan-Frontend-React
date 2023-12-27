@@ -7,6 +7,10 @@
 }
 
 .btn {
-  margin: 100px;
+  margin: 50px;
+  border-radius: 20px;
+  width: 200px;
+  height: 100px;
+  cursor: pointer;
 }
 
