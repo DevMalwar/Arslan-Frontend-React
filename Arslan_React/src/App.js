@@ -1,6 +1,6 @@
 import './App.css';
 import Modal from './components/Modal/Modal';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import List from './components/List/List';
 import Input from './components/Input/Input';
 
@@ -9,28 +9,7 @@ import Input from './components/Input/Input';
 function App() {
     const [show, setShow] = useState(false)
     const [newTask, setNewTask] = useState('')
-    const [tasks, setTasks] = useState([
-        {
-            id: 1,
-            title: "HTML",
-            completed: false
-        },
-        {
-            id: 2,
-            title: "CSS",
-            completed: false
-        },
-        {
-            id: 3,
-            title: "JS",
-            completed: false
-        },
-        {
-            id: 4,
-            title: "REACT",
-            completed: false
-        }
-    ])
+    const [tasks, setTasks] = useState([])
     const [searchTerm, setSearchTerm] = useState('');
     const handleOpen = () => {
         setShow(!show)
@@ -42,7 +21,7 @@ function App() {
 
     const handleAdd = () => {
         setTasks((prevState) => [...prevState, {
-            id: tasks[tasks.length - 1].id + 1,
+            id: tasks.length === 0 ? 1 : tasks[tasks.length - 1].id + 1,
             title: newTask,
             completed: false
         }
@@ -55,11 +34,18 @@ function App() {
     }
 
 
-    const handleEdit = (id, newText) => {
-        const updatedTasks = tasks.map(task =>
-            task.id === id ? {...task, title: newText} : task
-        );
-        setTasks(updatedTasks);
+    const handleEdit = (editTodo, newText) => {
+        tasks.map(task => {
+            if (task.id === editTodo.id) {
+                return task.title = editTodo.title
+            }
+        })
+
+        setTasks(tasks)
+        // const updatedTasks = tasks.map(task =>
+        //     task.id === id ? {...task, title: newText} : task
+        // );
+        // setTasks(updatedTasks);
     };
 
 
@@ -81,11 +67,57 @@ function App() {
         setTasks(filteredTasks);
     };
 
+    useEffect(() => {
+        const myLocalList = JSON.parse(localStorage.getItem('tasks'))
+        if (myLocalList === null) {
+            return localStorage.setItem('tasks', JSON.stringify(tasks))
+        }
+        if (myLocalList.length !== 0) {
+            setTasks(myLocalList)
+        }
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('tasks', JSON.stringify(tasks))
+    }, [tasks]);
+
+
+    const handleClearTasks = () => {
+        setTasks([]);
+        localStorage.removeItem('tasks');
+    };
+
+    const [filterType, setFilterType] = useState('all');
+    const handleFilterChange = (event) => {
+        setFilterType(event.target.value);
+    };
+
+    const getFilteredTasks = () => {
+        switch (filterType) {
+            case 'completed':
+                return tasks.filter(task => task.completed);
+            case 'uncompleted':
+                return tasks.filter(task => !task.completed);
+            default:
+                return tasks;
+        }
+    };
+
     return (
         <div className="App">
+            <br/>
+            <select  className="filter-select" value={filterType} onChange={handleFilterChange}>
+                <option value="all">Все таски</option>
+                <option value="completed">Выполненные</option>
+                <option value="uncompleted">Не выполненные</option>
+            </select>
+
+
             <h1>Search element</h1>
             <Input name={'search'} onChange={handleSearch} value={searchTerm}/>
             <button className='btn' onClick={handleOpen}>Открыть</button>
+            <button className='btn-clear' onClick={handleClearTasks}>Очистить все таски</button>
+            <br/>
             {show &&
                 <Modal
                     handleOpen={handleOpen}
@@ -93,7 +125,7 @@ function App() {
                     handleAdd={handleAdd}
                 />
             }
-            <List tasks={tasks} handleDelete={handleDelete} handleEdit={handleEdit} handleDone={handleDone}/>
+           <List tasks={getFilteredTasks()} handleDelete={handleDelete} handleEdit={handleEdit} handleDone={handleDone} />
         </div>
     );
 }
